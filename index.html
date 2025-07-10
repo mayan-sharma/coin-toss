@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLIP — Digital Coin Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            overflow-x: hidden;
+            cursor: default;
+        }
+        
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            background: linear-gradient(125deg, #0a0a0a 0%, #1a0a2a 50%, #0a0a0a 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 20s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.02;
+            z-index: 1;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgbnVtT2N0YXZlcz0iNCIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iMSIvPjwvc3ZnPg==');
+        }
+        
+        .main-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        /* Typography */
+        .title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(4rem, 12vw, 8rem);
+            letter-spacing: 0.05em;
+            line-height: 0.9;
+            color: transparent;
+            background: linear-gradient(180deg, #fff 0%, #666 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            from { filter: drop-shadow(0 0 20px rgba(255,255,255,0.2)); }
+            to { filter: drop-shadow(0 0 40px rgba(255,255,255,0.4)); }
+        }
+        
+        .subtitle {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 4rem;
+        }
+        
+        /* Coin Styles */
+        .coin-wrapper {
+            position: relative;
+            margin: 4rem auto;
+            perspective: 1000px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .coin {
+            width: 280px;
+            height: 280px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease;
+            cursor: pointer;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotateX(5deg) rotateY(5deg); }
+            50% { transform: translateY(-20px) rotateX(5deg) rotateY(5deg); }
+        }
+        
+        .coin:hover {
+            animation-play-state: paused;
+        }
+        
+        .coin:active {
+            transform: scale(0.98);
+        }
+        
+        .coin.flipping {
+            animation: coinFlip 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+        
+        @keyframes coinFlip {
+            0% { transform: rotateY(0); }
+            100% { transform: rotateY(1800deg); }
+        }
+        
+        .coin-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-shadow: 
+                0 0 60px rgba(255,255,255,0.1),
+                inset 0 0 20px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        .heads {
+            background: radial-gradient(circle at 30% 30%, #ffd700, #ffb300, #ff8c00);
+            color: #2a2a2a;
+        }
+        
+        .tails {
+            background: radial-gradient(circle at 30% 30%, #e0e0e0, #b0b0b0, #808080);
+            color: #2a2a2a;
+            transform: rotateY(180deg);
+        }
+        
+        .coin-icon {
+            font-size: 100px;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+        }
+        
+        .coin-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        
+        .show-tails {
+            transform: rotateY(180deg);
+        }
+        
+        /* Result Display */
+        .result-container {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .result {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .result.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        
+        .result.heads-win {
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+        
+        .result.tails-win {
+            color: #e0e0e0;
+            text-shadow: 0 0 30px rgba(224, 224, 224, 0.5);
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin: 3rem auto;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 0%, rgba(255,255,255,0.03) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+        
+        .stat-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-family: 'Inter', sans-serif;
+            font-size: 3rem;
+            font-weight: 200;
+            color: #fff;
+            line-height: 1;
+        }
+        
+        /* Percentage Bar */
+        .percentage-container {
+            max-width: 600px;
+            width: 100%;
+            margin: 2rem auto;
+        }
+        
+        .percentage-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .percentage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700 0%, #ffd700 50%, #e0e0e0 50%, #e0e0e0 100%);
+            background-size: 200% 100%;
+            background-position: -100% 0;
+            transition: background-position 1s ease;
+        }
+        
+        .percentage-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-top: 1rem;
+            letter-spacing: 0.1em;
+        }
+        
+        /* Reset Button */
+        .reset-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            padding: 1.2rem 3rem;
+            background: transparent;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 3rem;
+        }
+        
+        .reset-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .reset-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .reset-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .reset-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Glow effects */
+        .glow-orb {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.1;
+            pointer-events: none;
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+        
+        .glow-orb-1 {
+            background: #ffd700;
+            top: -200px;
+            left: -200px;
+        }
+        
+        .glow-orb-2 {
+            background: #8b5cf6;
+            bottom: -200px;
+            right: -200px;
+            animation-delay: -10s;
+        }
+        
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(100px, 50px) scale(1.1); }
+            50% { transform: translate(-50px, 100px) scale(0.9); }
+            75% { transform: translate(50px, -50px) scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="noise"></div>
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    
+    <div class="main-container">
+        <div class="content" style="text-align: center; max-width: 800px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <h1 class="title">FLIP</h1>
+            <p class="subtitle">Digital Coin Experience</p>
+            
+            <div class="coin-wrapper">
+                <div id="coin" class="coin">
+                    <div class="coin-face heads">
+                        <div class="coin-icon">👑</div>
+                        <div class="coin-text">HEADS</div>
+                    </div>
+                    <div class="coin-face tails">
+                        <div class="coin-icon">⚡</div>
+                        <div class="coin-text">TAILS</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-container">
+                <div id="result" class="result">Click to flip</div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Heads</div>
+                    <div class="stat-value" id="headsCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total</div>
+                    <div class="stat-value" id="totalCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Tails</div>
+                    <div class="stat-value" id="tailsCount">0</div>
+                </div>
+            </div>
+            
+            <div class="percentage-container">
+                <div class="percentage-bar">
+                    <div id="percentageBar" class="percentage-fill"></div>
+                </div>
+                <div id="percentageText" class="percentage-text">No flips yet</div>
+            </div>
+            
+            <button id="resetBtn" class="reset-btn">Reset Stats</button>
+        </div>
+    </div>
+
+    <script>
+        const coin = document.getElementById('coin');
+        const result = document.getElementById('result');
+        const headsCount = document.getElementById('headsCount');
+        const tailsCount = document.getElementById('tailsCount');
+        const totalCount = document.getElementById('totalCount');
+        const percentageBar = document.getElementById('percentageBar');
+        const percentageText = document.getElementById('percentageText');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        let isFlipping = false;
+        let stats = { heads: 0, tails: 0 };
+        
+        function updateDisplay() {
+            headsCount.textContent = stats.heads;
+            tailsCount.textContent = stats.tails;
+            const total = stats.heads + stats.tails;
+            totalCount.textContent = total;
+            
+            if (total > 0) {
+                const headsPercent = (stats.heads / total) * 100;
+                const tailsPercent = (stats.tails / total) * 100;
+                percentageBar.style.backgroundPosition = `${-100 + headsPercent}% 0`;
+                percentageText.textContent = `HEADS ${headsPercent.toFixed(1)}% — TAILS ${tailsPercent.toFixed(1)}%`;
+            } else {
+                percentageBar.style.backgroundPosition = '-100% 0';
+                percentageText.textContent = 'No flips yet';
+            }
+        }
+        
+        coin.addEventListener('click', function() {
+            if (isFlipping) return;
+            
+            isFlipping = true;
+            result.classList.remove('show', 'heads-win', 'tails-win');
+            coin.classList.add('flipping');
+            
+            const isHeads = Math.random() < 0.5;
+            
+            setTimeout(() => {
+                coin.classList.remove('flipping');
+                
+                if (isHeads) {
+                    coin.classList.remove('show-tails');
+                    result.textContent = 'HEADS';
+                    result.classList.add('heads-win');
+                    stats.heads++;
+                } else {
+                    coin.classList.add('show-tails');
+                    result.textContent = 'TAILS';
+                    result.classList.add('tails-win');
+                    stats.tails++;
+                }
+                
+                result.classList.add('show');
+                updateDisplay();
+                
+                setTimeout(() => {
+                    isFlipping = false;
+                }, 300);
+            }, 1200);
+        });
+        
+        resetBtn.addEventListener('click', function() {
+            stats = { heads: 0, tails: 0 };
+            updateDisplay();
+            coin.classList.remove('show-tails');
+            result.textContent = 'Stats reset';
+            result.classList.remove('heads-win', 'tails-win');
+            result.classList.add('show');
+            
+            setTimeout(() => {
+                result.classList.remove('show');
+                setTimeout(() => {
+                    result.textContent = 'Click to flip';
+                    result.classList.add('show');
+                }, 300);
+            }, 1000);
+        });
+        
+        // Initialize
+        updateDisplay();
+        result.classList.add('show');
+    </script>
+</body>
+</html>
